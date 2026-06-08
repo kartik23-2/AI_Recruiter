@@ -1,0 +1,238 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_colors.dart';
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  void _showComingSoonSnackBar(BuildContext context, String title) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.info_outline_rounded,
+              color: Color.fromARGB(255, 16, 198, 204),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const Text(
+                    'Coming in future step',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
+        margin: const EdgeInsets.all(16),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AppColors.darkGradient,
+        ),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Premium App Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'AI Voice Recruiter',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Empower your career with AI recruiting intelligence',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Decorative profile-like visual token
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.border, width: 1.5),
+                        color: AppColors.surfaceLight,
+                      ),
+                      child: const Icon(
+                        Icons.settings_suggest_rounded,
+                        color: AppColors.accent,
+                        size: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(color: AppColors.border, height: 1, indent: 24, endIndent: 24),
+              // Subtitle/Instruction
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                child: Text(
+                  'CHOOSE YOUR PATHWAY',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+              // Menu Cards list
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    _buildMenuCard(
+                      context: context,
+                      title: 'Resume Interview',
+                      description: 'Tailored assessment matching your specific CV & professional history.',
+                      icon: Icons.description_rounded,
+                      color: AppColors.primary,
+                      onTap: () => context.go('/resume-analysis'),
+                    ),
+                    _buildMenuCard(
+                      context: context,
+                      title: 'Skill-Based Interview',
+                      description: 'Test deep expertise in specific technology domains and platforms.',
+                      icon: Icons.code_rounded,
+                      color: AppColors.secondary,
+                    ),
+                    _buildMenuCard(
+                      context: context,
+                      title: 'Hybrid Interview',
+                      description: 'Comprehensive evaluation covering both technical and background aspects.',
+                      icon: Icons.psychology_rounded,
+                      color: AppColors.accent,
+                    ),
+                    _buildMenuCard(
+                      context: context,
+                      title: 'Interview History',
+                      description: 'Review transcripts, evaluation logs, scores, and past reports.',
+                      icon: Icons.history_toggle_off_rounded,
+                      color: AppColors.success,
+                    ),
+                    _buildMenuCard(
+                      context: context,
+                      title: 'Profile',
+                      description: 'Manage personal credentials, default CV configurations, and audio settings.',
+                      icon: Icons.person_outline_rounded,
+                      color: AppColors.warning,
+                      onTap: () => context.go('/profile'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuCard({
+    required BuildContext context,
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color color,
+    VoidCallback? onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Card(
+        child: InkWell(
+          onTap: onTap ?? () => _showComingSoonSnackBar(context, title),
+          splashColor: color.withValues(alpha: 0.12),
+          highlightColor: color.withValues(alpha: 0.06),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                // Glowing Icon Wrapper
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withValues(alpha: 0.2), width: 1.5),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 18),
+                // Text Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        description,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Trailing Arrow indicator
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: AppColors.textMuted.withValues(alpha: 0.6),
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

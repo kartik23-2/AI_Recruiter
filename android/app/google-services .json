@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "338945846821",
+    "project_id": "ai-recruiter-50816",
+    "storage_bucket": "ai-recruiter-50816.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:338945846821:android:cfcb14dab58752f1b359cc",
+        "android_client_info": {
+          "package_name": "com.airecruiter.ai_recruiter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdLHFD_yODvv69vpMWymss963gFb8Pa64"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
