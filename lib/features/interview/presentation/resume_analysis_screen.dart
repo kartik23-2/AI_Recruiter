@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../auth/data/auth_service.dart';
 import '../../../shared/widgets/gradient_button.dart';
+import '../data/resume_repository.dart';
 import '../data/resume_service.dart';
 import '../domain/candidate_profile.dart';
 
@@ -22,6 +24,8 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
   String? _fileName;
   CandidateProfile? _profile;
   bool _isAnalyzing = false;
+  bool _isLoadingStoredProfile = true;
+  String? _loadErrorMessage;
 
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -34,12 +38,47 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
       duration: const Duration(milliseconds: 600),
     );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _loadStoredProfile();
   }
 
   @override
   void dispose() {
     _animController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadStoredProfile() async {
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid == null) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingStoredProfile = false;
+        _loadErrorMessage =
+            'You need to be signed in to load saved resume data.';
+      });
+      return;
+    }
+
+    try {
+      final storedProfile = await ResumeRepository.instance.readProfile(uid);
+      if (!mounted) return;
+
+      setState(() {
+        _profile = storedProfile;
+        _loadErrorMessage = null;
+        _isLoadingStoredProfile = false;
+      });
+
+      if (storedProfile != null) {
+        _animController.forward(from: 0);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingStoredProfile = false;
+        _loadErrorMessage = 'Could not load your saved resume profile.';
+      });
+    }
   }
 
   Future<void> _pickResume() async {
@@ -60,7 +99,7 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
     setState(() {
       _selectedFile = File(file.path!);
       _fileName = file.name;
-      _profile = null;
+      _loadErrorMessage = null;
     });
   }
 
@@ -72,14 +111,28 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
 
     setState(() {
       _isAnalyzing = true;
-      _profile = null;
     });
 
     try {
-      final profile =
-          await ResumeService.instance.analyzeResume(_selectedFile!);
+      final analyzedProfile = await ResumeService.instance.analyzeResume(
+        _selectedFile!,
+      );
+      final profile = analyzedProfile.copyWith(analyzedAt: DateTime.now());
+
+      final uid = AuthService.instance.currentUser?.uid;
+      if (uid == null) {
+        throw ResumeAnalysisException(
+          'You need to be signed in to save the analyzed resume profile.',
+        );
+      }
+
+      await ResumeRepository.instance.saveProfile(uid: uid, profile: profile);
+
       if (mounted) {
-        setState(() => _profile = profile);
+        setState(() {
+          _profile = profile;
+          _loadErrorMessage = null;
+        });
         _animController.forward(from: 0);
       }
     } on ResumeAnalysisException catch (e) {
@@ -99,8 +152,11 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error_outline_rounded,
-                color: AppColors.error, size: 20),
+            const Icon(
+              Icons.error_outline_rounded,
+              color: AppColors.error,
+              size: 20,
+            ),
             const SizedBox(width: 10),
             Expanded(child: Text(message)),
           ],
@@ -133,9 +189,20 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _buildUploadSection(context),
+                      if (_isLoadingStoredProfile) ...[
+                        const SizedBox(height: 20),
+                        _buildLoadingCard(message: 'Loading saved profile...'),
+                      ],
+                      if (_loadErrorMessage != null) ...[
+                        const SizedBox(height: 20),
+                        _buildErrorCard(_loadErrorMessage!),
+                      ],
                       const SizedBox(height: 20),
                       GradientButton(
-                        onPressed: (_selectedFile != null && !_isAnalyzing)
+                        onPressed:
+                            (_selectedFile != null &&
+                                !_isAnalyzing &&
+                                !_isLoadingStoredProfile)
                             ? _analyzeResume
                             : null,
                         isLoading: _isAnalyzing,
@@ -167,17 +234,19 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
         children: [
           IconButton(
             onPressed: () => context.go('/home'),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: AppColors.textPrimary, size: 20),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: AppColors.textPrimary,
+              size: 20,
+            ),
           ),
           Expanded(
             child: Text(
               'Resume Analysis',
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           const SizedBox(width: 48),
@@ -215,18 +284,18 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
           const SizedBox(height: 20),
           Text(
             'Upload Your Resume',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(
             'Select a PDF resume to extract your professional profile',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                ),
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
@@ -254,8 +323,11 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.insert_drive_file_rounded,
-                      color: AppColors.accent, size: 20),
+                  const Icon(
+                    Icons.insert_drive_file_rounded,
+                    color: AppColors.accent,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
@@ -272,12 +344,15 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
                     onPressed: _isAnalyzing
                         ? null
                         : () => setState(() {
-                              _selectedFile = null;
-                              _fileName = null;
-                              _profile = null;
-                            }),
-                    icon: const Icon(Icons.close_rounded,
-                        color: AppColors.textMuted, size: 18),
+                            _selectedFile = null;
+                            _fileName = null;
+                            _loadErrorMessage = null;
+                          }),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textMuted,
+                      size: 18,
+                    ),
                     constraints: const BoxConstraints(),
                     padding: EdgeInsets.zero,
                   ),
@@ -290,7 +365,7 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
     );
   }
 
-  Widget _buildLoadingCard() {
+  Widget _buildLoadingCard({String message = 'Analyzing your resume...'}) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -298,15 +373,53 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
-      child: const Column(
+      child: Row(
         children: [
-          CircularProgressIndicator(color: AppColors.primary),
-          SizedBox(height: 16),
-          Text(
-            'Analyzing your resume...',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
+          const SizedBox(
+            width: 22,
+            height: 22,
+            child: CircularProgressIndicator(strokeWidth: 2.4),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorCard(String message) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.55)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.error,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -323,13 +436,15 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
           Text(
             'EXTRACTED PROFILE',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                  color: AppColors.primary,
-                ),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(height: 16),
           _buildNameCard(profile.name),
+          const SizedBox(height: 12),
+          _buildDateCard(profile.analyzedAt),
           const SizedBox(height: 12),
           _buildListCard(
             title: 'Skills',
@@ -362,9 +477,101 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
             items: profile.experience,
             emptyText: 'No experience detected',
           ),
+          const SizedBox(height: 12),
+          _buildListCard(
+            title: 'Strong Areas',
+            icon: Icons.trending_up_rounded,
+            color: AppColors.success,
+            items: profile.strengths,
+            emptyText: 'No strong areas detected',
+          ),
+          const SizedBox(height: 12),
+          _buildListCard(
+            title: 'Weak Areas',
+            icon: Icons.gps_fixed_rounded,
+            color: AppColors.error,
+            items: profile.weakAreas,
+            emptyText: 'No weak areas detected',
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildDateCard(DateTime? analyzedAt) {
+    final label = analyzedAt == null
+        ? 'Not available'
+        : _formatDateTime(analyzedAt);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.calendar_month_rounded,
+                color: AppColors.primary,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Last Analyzed Date',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final local = dateTime.toLocal();
+    final monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final month = monthNames[local.month - 1];
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '$month ${local.day}, ${local.year} • $hour:$minute';
   }
 
   Widget _buildNameCard(String name) {
@@ -457,8 +664,10 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
                 ),
                 const Spacer(),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),

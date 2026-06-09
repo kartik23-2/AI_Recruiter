@@ -11,7 +11,7 @@ class ApiConfig {
   /// Override for physical devices, e.g. '192.168.1.42'.
   static const String? hostOverride = null;
 
-  static const int port = 8000;
+  static const int port = 8001;
 
   static String get baseUrl {
     if (hostOverride != null) {
