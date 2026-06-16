@@ -5,42 +5,6 @@ import '../../../core/constants/app_colors.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  void _showComingSoonSnackBar(BuildContext context, String title) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(
-              Icons.info_outline_rounded,
-              color: Color.fromARGB(255, 16, 198, 204),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const Text(
-                    'Coming in future step',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        duration: const Duration(seconds: 2),
-        margin: const EdgeInsets.all(16),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,7 +44,6 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    // Decorative profile-like visual token
                     Container(
                       width: 44,
                       height: 44,
@@ -99,7 +62,6 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const Divider(color: AppColors.border, height: 1, indent: 24, endIndent: 24),
-              // Subtitle/Instruction
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
                 child: Text(
@@ -131,6 +93,7 @@ class HomeScreen extends StatelessWidget {
                       description: 'Test deep expertise in specific technology domains and platforms.',
                       icon: Icons.code_rounded,
                       color: AppColors.secondary,
+                      onTap: () => context.go('/interview-setup'),
                     ),
                     _buildMenuCard(
                       context: context,
@@ -138,6 +101,7 @@ class HomeScreen extends StatelessWidget {
                       description: 'Comprehensive evaluation covering both technical and background aspects.',
                       icon: Icons.psychology_rounded,
                       color: AppColors.accent,
+                      onTap: () => context.go('/interview-setup'),
                     ),
                     _buildMenuCard(
                       context: context,
@@ -145,13 +109,22 @@ class HomeScreen extends StatelessWidget {
                       description: 'Review transcripts, evaluation logs, scores, and past reports.',
                       icon: Icons.history_toggle_off_rounded,
                       color: AppColors.success,
+                      onTap: () => context.go('/history'),
+                    ),
+                    _buildMenuCard(
+                      context: context,
+                      title: 'Analytics',
+                      description: 'View performance trends, scores, and improvement insights.',
+                      icon: Icons.analytics_rounded,
+                      color: AppColors.warning,
+                      onTap: () => context.go('/analytics'),
                     ),
                     _buildMenuCard(
                       context: context,
                       title: 'Profile',
                       description: 'Manage personal credentials, default CV configurations, and audio settings.',
                       icon: Icons.person_outline_rounded,
-                      color: AppColors.warning,
+                      color: AppColors.textMuted,
                       onTap: () => context.go('/profile'),
                     ),
                   ],
@@ -176,14 +149,13 @@ class HomeScreen extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Card(
         child: InkWell(
-          onTap: onTap ?? () => _showComingSoonSnackBar(context, title),
+          onTap: onTap,
           splashColor: color.withValues(alpha: 0.12),
           highlightColor: color.withValues(alpha: 0.06),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                // Glowing Icon Wrapper
                 Container(
                   width: 56,
                   height: 56,
@@ -199,7 +171,6 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 18),
-                // Text Content
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,7 +193,6 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Trailing Arrow indicator
                 Icon(
                   Icons.arrow_forward_ios_rounded,
                   color: AppColors.textMuted.withValues(alpha: 0.6),

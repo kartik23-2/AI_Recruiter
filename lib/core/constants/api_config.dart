@@ -11,7 +11,7 @@ class ApiConfig {
   /// Override for physical devices, e.g. '192.168.1.42'.
   static const String? hostOverride = null;
 
-  static const int port = 8001;
+  static const int port = 8000;
 
   static String get baseUrl {
     if (hostOverride != null) {
@@ -23,5 +23,14 @@ class ApiConfig {
     return 'http://localhost:$port';
   }
 
+  // Resume
   static String get analyzeResumeUrl => '$baseUrl/analyze-resume';
+
+  // Interview
+  static String get generateQuestionsUrl =>
+      '$baseUrl/interview/generate-questions';
+  static String get evaluateAnswerUrl =>
+      '$baseUrl/interview/evaluate-answer';
+  static String get generateReportUrl =>
+      '$baseUrl/interview/generate-report';
 }

@@ -189,6 +189,21 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _buildUploadSection(context),
+                      const SizedBox(height: 20),
+                      FilledButton.icon(
+                        onPressed: () => context.go('/voice-interview'),
+                        icon: const Icon(Icons.mic_rounded),
+                        label: const Text('Start Voice Interview'),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
                       if (_isLoadingStoredProfile) ...[
                         const SizedBox(height: 20),
                         _buildLoadingCard(message: 'Loading saved profile...'),
