@@ -7,7 +7,7 @@ import os
 import re
 from typing import Any
 
-import google.generativeai as genai
+from services.gemini_client import GeminiClient
 
 from models.interview_models import (
     Difficulty,
@@ -35,22 +35,13 @@ _DURATION_TO_COUNT = {
 class QuestionGenerator:
     """Uses Gemini to generate interview questions based on config."""
 
-    def __init__(self) -> None:
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise QuestionGenerationError("GEMINI_API_KEY is not configured.")
-
-        model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-        genai.configure(api_key=api_key)
-        self._model = genai.GenerativeModel(model_name)
-
     def generate(self, config: InterviewConfig) -> list[GeneratedQuestion]:
         """Generate a list of interview questions for the given config."""
         count = _DURATION_TO_COUNT.get(config.duration_minutes, 8)
         prompt = self._build_prompt(config, count)
 
         try:
-            response = self._model.generate_content(
+            response = GeminiClient.generate_content(
                 prompt,
                 generation_config={
                     "temperature": 0.7,
@@ -91,7 +82,7 @@ class QuestionGenerator:
         )
 
         try:
-            response = self._model.generate_content(
+            response = GeminiClient.generate_content(
                 prompt,
                 generation_config={"temperature": 0.6},
             )

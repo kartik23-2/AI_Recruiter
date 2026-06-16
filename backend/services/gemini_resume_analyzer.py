@@ -5,9 +5,10 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-import google.generativeai as genai
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 from PyPDF2 import PdfReader
+
+from services.gemini_client import GeminiClient
 
 
 class ResumeAnalysisError(Exception):
@@ -53,16 +54,7 @@ class ResumeProfile(BaseModel):
 
 
 class GeminiResumeAnalyzer:
-    """Extracts resume text, sends it to Gemini, and validates the structured result."""
-
-    def __init__(self) -> None:
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ResumeAnalysisError("GEMINI_API_KEY is not configured.")
-
-        self._model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-        genai.configure(api_key=api_key)
-        self._model = genai.GenerativeModel(self._model_name)
+    """Analyzes resumes using Google's Gemini models."""
 
     def analyze_pdf(self, pdf_bytes: bytes) -> dict[str, Any]:
         text = self._extract_text(pdf_bytes)
@@ -87,7 +79,7 @@ class GeminiResumeAnalyzer:
     def _generate_profile(self, resume_text: str) -> ResumeProfile:
         prompt = self._build_prompt(resume_text)
         try:
-            response = self._model.generate_content(
+            response = GeminiClient.generate_content(
                 prompt,
                 generation_config={
                     "temperature": 0.2,

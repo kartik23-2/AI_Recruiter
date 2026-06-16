@@ -7,7 +7,7 @@ import os
 import re
 from typing import Any
 
-import google.generativeai as genai
+from services.gemini_client import GeminiClient
 
 from models.interview_models import InterviewReport
 
@@ -18,15 +18,6 @@ class ReportGenerationError(Exception):
 
 class ReportGenerator:
     """Uses Gemini to produce a detailed post-interview report."""
-
-    def __init__(self) -> None:
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ReportGenerationError("GEMINI_API_KEY is not configured.")
-
-        model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-        genai.configure(api_key=api_key)
-        self._model = genai.GenerativeModel(model_name)
 
     def generate(
         self,
@@ -39,7 +30,7 @@ class ReportGenerator:
         prompt = self._build_prompt(role, difficulty, experience_level, questions)
 
         try:
-            response = self._model.generate_content(
+            response = GeminiClient.generate_content(
                 prompt,
                 generation_config={
                     "temperature": 0.4,

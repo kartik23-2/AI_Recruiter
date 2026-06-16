@@ -44,20 +44,6 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.border, width: 1.5),
-                        color: AppColors.surfaceLight,
-                      ),
-                      child: const Icon(
-                        Icons.settings_suggest_rounded,
-                        color: AppColors.accent,
-                        size: 20,
-                      ),
-                    ),
                   ],
                 ),
               ),

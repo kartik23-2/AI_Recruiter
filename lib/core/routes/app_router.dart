@@ -46,7 +46,10 @@ class AppRouter {
       ),
       GoRoute(
         path: '/interview-setup',
-        builder: (context, state) => const InterviewSetupScreen(),
+        builder: (context, state) {
+          final initialMode = state.extra as InterviewMode? ?? InterviewMode.skill;
+          return InterviewSetupScreen(initialMode: initialMode);
+        },
       ),
       GoRoute(
         path: '/voice-interview',

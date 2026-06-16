@@ -35,6 +35,14 @@ class InterviewRepository {
     return InterviewResult.fromFirestore(doc.id, data);
   }
 
+  /// Delete an interview.
+  Future<void> deleteInterview({
+    required String uid,
+    required String interviewId,
+  }) async {
+    await _interviewsRef(uid).doc(interviewId).delete();
+  }
+
   /// Fetch all interviews for a user, most recent first.
   Future<List<InterviewResult>> fetchAllInterviews(String uid) async {
     final snapshot = await _interviewsRef(uid)

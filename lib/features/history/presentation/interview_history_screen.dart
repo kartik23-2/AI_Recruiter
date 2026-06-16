@@ -45,6 +45,50 @@ class _InterviewHistoryScreenState extends State<InterviewHistoryScreen> {
     }
   }
 
+  Future<void> _deleteInterview(String? interviewId) async {
+    if (interviewId == null) return;
+    final uid = AuthService.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text('Delete Interview'),
+        content: const Text('Are you sure you want to delete this interview record? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await InterviewRepository.instance.deleteInterview(
+          uid: uid,
+          interviewId: interviewId,
+        );
+        setState(() {
+          _interviews.removeWhere((i) => i.id == interviewId);
+        });
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to delete interview')),
+          );
+        }
+      }
+    }
+  }
+
   String _formatDate(DateTime date) {
     final months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -285,10 +329,11 @@ class _InterviewHistoryScreenState extends State<InterviewHistoryScreen> {
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.textMuted.withValues(alpha: 0.6),
-              size: 22,
+            IconButton(
+              onPressed: () => _deleteInterview(interview.id),
+              icon: const Icon(Icons.delete_outline_rounded),
+              color: AppColors.error.withValues(alpha: 0.8),
+              iconSize: 22,
             ),
           ],
         ),

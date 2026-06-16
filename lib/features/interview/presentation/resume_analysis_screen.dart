@@ -10,6 +10,7 @@ import '../../../shared/widgets/gradient_button.dart';
 import '../data/resume_repository.dart';
 import '../data/resume_service.dart';
 import '../domain/candidate_profile.dart';
+import '../domain/interview_config.dart';
 
 class ResumeAnalysisScreen extends StatefulWidget {
   const ResumeAnalysisScreen({super.key});
@@ -191,7 +192,7 @@ class _ResumeAnalysisScreenState extends State<ResumeAnalysisScreen>
                       _buildUploadSection(context),
                       const SizedBox(height: 20),
                       FilledButton.icon(
-                        onPressed: () => context.go('/voice-interview'),
+                        onPressed: () => context.go('/interview-setup', extra: InterviewMode.resume),
                         icon: const Icon(Icons.mic_rounded),
                         label: const Text('Start Voice Interview'),
                         style: FilledButton.styleFrom(

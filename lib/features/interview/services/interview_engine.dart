@@ -99,8 +99,10 @@ class InterviewEngine extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  String _liveTranscript = '';
-  String get liveTranscript => _liveTranscript;
+  String _accumulatedTranscript = '';
+  String _currentUtterance = '';
+
+  String get liveTranscript => '$_accumulatedTranscript $_currentUtterance'.trim();
 
   Timer? _silenceTimer;
   int? _activeDraftIndex;
@@ -163,7 +165,8 @@ class InterviewEngine extends ChangeNotifier {
     }
 
     final q = _questions[_currentIndex];
-    _liveTranscript = '';
+    _accumulatedTranscript = '';
+    _currentUtterance = '';
     _activeDraftIndex = null;
     _errorMessage = null;
 
@@ -212,18 +215,25 @@ class InterviewEngine extends ChangeNotifier {
 
   // ── Speech-to-Text ────────────────────────────────────────────────────────
 
-  Future<void> startListening() async {
+  Future<void> startListening({bool isRestart = false}) async {
     if (_phase != EnginePhase.waitingForAnswer &&
+        _phase != EnginePhase.listening &&
         _phase != EnginePhase.answerCaptured) {
       return;
     }
 
-    _silenceTimer?.cancel();
+    if (!isRestart) {
+      _silenceTimer?.cancel();
+      _accumulatedTranscript = '';
+    }
+    
+    _currentUtterance = '';
+    
     _setPhase(EnginePhase.listening);
     _statusMessage = '🎙 Listening...';
     _errorMessage = null;
-    _liveTranscript = '';
     _ensureDraftMessage();
+    _updateDraftMessage();
     notifyListeners();
 
     final err = await _stt.startListening(
@@ -231,9 +241,15 @@ class InterviewEngine extends ChangeNotifier {
       onError: _onSpeechError,
       onStatus: (status) {
         if (status == 'notListening' && _phase == EnginePhase.listening) {
-          Future.delayed(const Duration(milliseconds: 1500), () {
+          // The STT engine stopped prematurely (e.g., 2-3s pause).
+          // Save what we have and restart listening to keep the 10s window open.
+          _accumulatedTranscript = '$_accumulatedTranscript $_currentUtterance'.trim();
+          _currentUtterance = '';
+          _updateDraftMessage();
+          
+          Future.delayed(const Duration(milliseconds: 100), () {
             if (_phase == EnginePhase.listening) {
-              _finalizeAnswer(trigger: 'speech-status');
+              startListening(isRestart: true);
             }
           });
         }
@@ -241,47 +257,57 @@ class InterviewEngine extends ChangeNotifier {
     );
 
     if (err != null) {
-      _setPhase(EnginePhase.waitingForAnswer);
-      _errorMessage = err;
-      _statusMessage = err;
-      notifyListeners();
+      if (isRestart) {
+        _finalizeAnswer(trigger: 'speech-error-restart');
+      } else {
+        _setPhase(EnginePhase.waitingForAnswer);
+        _errorMessage = err;
+        _statusMessage = err;
+        notifyListeners();
+      }
       return;
     }
 
-    _startSilenceTimer();
+    if (!isRestart) {
+      _startSilenceTimer();
+    }
   }
 
   void _onSpeechResult(String transcript) {
     final normalized = transcript.trim();
     if (normalized.isEmpty) return;
-    if (_liveTranscript.trim() == normalized) {
+    if (_currentUtterance.trim() == normalized) {
       _startSilenceTimer();
       return;
     }
 
-    _liveTranscript = normalized;
+    _currentUtterance = normalized;
     _statusMessage = '🎙 Listening...';
     _errorMessage = null;
 
-    if (_activeDraftIndex != null && _activeDraftIndex! < messages.length) {
-      messages[_activeDraftIndex!] = messages[_activeDraftIndex!].copyWith(
-        text: normalized,
-        isDraft: true,
-      );
-    }
-
+    _updateDraftMessage();
     _startSilenceTimer();
     notifyListeners();
   }
 
+  void _updateDraftMessage() {
+    if (_activeDraftIndex != null && _activeDraftIndex! < messages.length) {
+      messages[_activeDraftIndex!] = messages[_activeDraftIndex!].copyWith(
+        text: liveTranscript,
+        isDraft: true,
+      );
+    }
+  }
+
   void _onSpeechError(String msg) {
-    _errorMessage = msg;
-    _finalizeAnswer(trigger: 'speech-error');
+    debugPrint('Speech error: $msg');
+    // We ignore speech errors (like timeouts) and rely on the 10-second 
+    // _silenceTimer to finalize the answer. The notListening handler will restart.
   }
 
   void _startSilenceTimer() {
     _silenceTimer?.cancel();
-    _silenceTimer = Timer(const Duration(seconds: 5), () {
+    _silenceTimer = Timer(const Duration(seconds: 10), () {
       if (_phase == EnginePhase.listening) {
         _finalizeAnswer(trigger: 'silence-timeout');
       }
@@ -292,7 +318,7 @@ class InterviewEngine extends ChangeNotifier {
     _silenceTimer?.cancel();
     await _stt.stopListening();
 
-    final text = _liveTranscript.trim();
+    final text = liveTranscript;
     final finalText = text.isEmpty ? 'No speech detected.' : text;
 
     // Finalize the draft message
@@ -492,7 +518,8 @@ class InterviewEngine extends ChangeNotifier {
 
       _currentIndex++;
       _activeDraftIndex = null;
-      _liveTranscript = '';
+      _accumulatedTranscript = '';
+      _currentUtterance = '';
       await _askCurrentQuestion();
     }
   }

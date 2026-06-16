@@ -12,7 +12,12 @@ import '../data/resume_service.dart';
 import '../domain/interview_config.dart';
 
 class InterviewSetupScreen extends StatefulWidget {
-  const InterviewSetupScreen({super.key});
+  final InterviewMode initialMode;
+
+  const InterviewSetupScreen({
+    super.key,
+    this.initialMode = InterviewMode.skill,
+  });
 
   @override
   State<InterviewSetupScreen> createState() => _InterviewSetupScreenState();
@@ -20,7 +25,7 @@ class InterviewSetupScreen extends StatefulWidget {
 
 class _InterviewSetupScreenState extends State<InterviewSetupScreen> {
   // Config state
-  InterviewMode _mode = InterviewMode.skill;
+  late InterviewMode _mode;
   final TextEditingController _roleController = TextEditingController(
     text: 'Software Engineer',
   );
@@ -43,6 +48,7 @@ class _InterviewSetupScreenState extends State<InterviewSetupScreen> {
   @override
   void initState() {
     super.initState();
+    _mode = widget.initialMode;
     _loadStoredResumeSkills();
   }
 
@@ -65,6 +71,13 @@ class _InterviewSetupScreenState extends State<InterviewSetupScreen> {
       if (mounted && profile != null) {
         setState(() {
           _hasStoredResume = true;
+          _resumeText = [
+            'Name: ${profile.name}',
+            'Skills: ${profile.skills.join(", ")}',
+            'Projects: ${profile.projects.join(", ")}',
+            'Experience: ${profile.experience.join(", ")}',
+            'Education: ${profile.education.join(", ")}',
+          ].join('\n');
           // Pre-fill skills from resume if user hasn't added any
           if (_skills.isEmpty && profile.skills.isNotEmpty) {
             _skills.addAll(profile.skills.take(10));
