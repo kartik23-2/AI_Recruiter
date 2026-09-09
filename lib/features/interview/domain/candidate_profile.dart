@@ -26,7 +26,11 @@ class CandidateProfile {
 
   static List<String> _parseStringList(dynamic value) {
     if (value is List) {
-      return value.map((e) => e.toString()).where((s) => s.isNotEmpty).toList();
+      return value
+          .where((e) => e != null)
+          .map((e) => e.toString().trim())
+          .where((s) => s.isNotEmpty && s != 'null')
+          .toList();
     }
     return [];
   }
