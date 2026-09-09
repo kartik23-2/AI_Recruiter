@@ -23,5 +23,14 @@ class ApiConfig {
     return 'http://localhost:$port';
   }
 
+  // Resume
   static String get analyzeResumeUrl => '$baseUrl/analyze-resume';
+
+  // Interview
+  static String get generateQuestionsUrl =>
+      '$baseUrl/interview/generate-questions';
+  static String get evaluateAnswerUrl =>
+      '$baseUrl/interview/evaluate-answer';
+  static String get generateReportUrl =>
+      '$baseUrl/interview/generate-report';
 }

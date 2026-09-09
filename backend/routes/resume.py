@@ -1,9 +1,16 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
-from services.resume_parser import ResumeParser
+from services.gemini_resume_analyzer import ResumeAnalysisError, GeminiResumeAnalyzer
 
 router = APIRouter(tags=["resume"])
-parser = ResumeParser()
+_analyzer: GeminiResumeAnalyzer | None = None
+
+
+def _get_analyzer() -> GeminiResumeAnalyzer:
+    global _analyzer
+    if _analyzer is None:
+        _analyzer = GeminiResumeAnalyzer()
+    return _analyzer
 
 
 @router.post("/analyze-resume")
@@ -22,13 +29,15 @@ async def analyze_resume(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
 
     try:
-        profile = parser.parse_pdf(content)
+        profile = _get_analyzer().analyze_pdf(content)
+    except ResumeAnalysisError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(
             status_code=500,
-            detail="Failed to parse resume. Please try a different PDF.",
+            detail="Failed to analyze resume. Please try a different PDF.",
         ) from exc
 
     return profile

@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+/lib/firebase_options.dart
+/android/app/google-services*.json
 
 # Symbolication related
 app.*.symbols
@@ -43,3 +45,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Backend local environment
+/backend/.env
+/backend/venv/
