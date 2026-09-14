@@ -6,7 +6,7 @@ A full-stack AI-powered interview preparation platform that simulates real recru
 
 ## ✨ Features
 
-### 🔐 Authentication....
+### 🔐 Authentication
 
 * Firebase Authentication
 * Secure Login & Signup
