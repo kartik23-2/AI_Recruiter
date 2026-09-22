@@ -4,7 +4,7 @@ A full-stack AI-powered interview preparation platform that simulates real recru
 
 ---
 
-## ✨ Features
+## ✨ Featuressssssss
 
 ### 🔐 Authentication
 
